@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.ml import Pipeline
+from pyspark.ml.pipeline import PipelineModel
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.functions import lower, when, col
 
@@ -19,17 +19,17 @@ spark = SparkSession \
 spark.sparkContext.setLogLevel("WARN")
 
 
-def foreach_batch_func(df: DataFrame):
+def foreach_batch_func(df: DataFrame, _):
     sentences = df.select(lower(df.value).alias("sentence"))
 
-    model = Pipeline().load(MODEL_FILE)
+    model = PipelineModel.load(MODEL_FILE)
     prediction = model.transform(sentences)
 
     prediction \
         .select(
             "sentence",
             "probability",
-            when(col("prediction") == 1.0, "positive").otherwise("negative")
+            when(col("prediction") == 1.0, "positive").otherwise("negative").alias("prediction")
         ) \
         .write \
         .format("console") \
